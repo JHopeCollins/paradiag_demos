@@ -4,9 +4,15 @@ import scipy.linalg as linalg
 
 import matplotlib.pyplot as plt
 
-# change this to use fft
+# C*x where C is circulant matrix with first column c
 def circ_mul( c, x ):
-    return np.matmul(linalg.circulant(c),x)
+    n = c.shape[0]
+    eigvals = fft.fft(c)
+
+    xnew = fft.fft(x)
+    xnew*=eigvals
+    xnew = fft.ifft(xnew)
+    return xnew.real
 
 # parameters
 
