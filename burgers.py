@@ -2,7 +2,9 @@
 import numpy as np
 import scipy.linalg as linalg
 import scipy.fft as fft
+
 import circulant as circ
+import mesh
 
 import matplotlib.pyplot as plt
 
@@ -21,35 +23,6 @@ def newton_solve( func,         # function to solve
         res = np.sum( np.square( dx ) )
         its+=1
     return xnew, its, res
-
-def gradient_matrix( x, form='full' ):
-    # circulant gradient matrix for periodic mesh
-    ddx = np.zeros_like(x)
-    ddx[1]    = -1/(2*dx)
-    ddx[nx-1] =  1/(2*dx)
-
-    if   form=='circ': return ddx
-    elif form=='full': return linalg.circulant(ddx)
-    else: raise ValueError( "form must be 'circ' or 'full'" )
-
-def laplacian_matrix( x, form='full' ):
-    # circulant laplacian matrix for periodic mesh
-    ddx2 = np.zeros_like(x)
-    ddx2[1]    =  1/dx**2
-    ddx2[0]    = -2/dx**2
-    ddx2[nx-1] =  1/dx**2
-
-    if   form=='circ': return ddx2
-    elif form=='full': return linalg.circulant(ddx2)
-    else: raise ValueError( "form must be 'circ' or 'full'" )
-
-def gradient_operator( x ):
-    ddx = gradient_matrix(x,form='circ')
-    return lambda u: circ.matmul(ddx,u)
-
-def laplacian_operator( x ):
-    ddx2 = laplacian_matrix(x,form='circ')
-    return lambda u: circ.matmul(ddx2,u)
 
 # parameters
 
@@ -86,7 +59,7 @@ print( "nu, dt, cfl_v, cfl_u" )
 print(  nu, dt, cfl_v, cfl_u  )
 
 # mesh
-x = np.linspace(start=-lx/2,stop=lx/2,num=nx)
+x = mesh.periodic_mesh( xl=-lx/2, xr=lx/2, nx=nx )
 
 # solution at each timestep
 q = np.zeros( (nt, x.shape[0]) )
@@ -95,12 +68,12 @@ q = np.zeros( (nt, x.shape[0]) )
 q[0,:] = u0 + du*np.exp( -sharp*(x+2)**2 )
 
 # circulant gradient and laplacian matrices
-ddx  =  gradient_matrix(x,form='circ')
-ddx2 = laplacian_matrix(x,form='circ')
+ddx  =  mesh.gradient_matrix(x,form='circ')
+ddx2 = mesh.laplacian_matrix(x,form='circ')
 
 # gradient and laplacian operators
-grad =  gradient_operator(x)
-lapl = laplacian_operator(x)
+grad =  mesh.gradient_operator(x)
+lapl = mesh.laplacian_operator(x)
 
 # spatial operator
 def spatial_residual( u ):

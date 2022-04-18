@@ -1,7 +1,9 @@
 
 import numpy as np
 import scipy.linalg as linalg
+
 import circulant as circ
+import mesh
 
 import matplotlib.pyplot as plt
 
@@ -33,33 +35,25 @@ print( "nu, dt, cfl_v, cfl_u" )
 print(  nu, dt, cfl_v, cfl_u  )
 
 # mesh
-x = np.linspace(start=-1,stop=1,num=nx)
+x = mesh.periodic_mesh( xl=-1, xr=1, nx=nx )
 
 # initial conditions
 
 q0 = np.exp( -10*x**2 )
 
-# jacobian elements for spatial terms
+# circulant matrices for gradient and laplacian
+ddx  = mesh.gradient_matrix(  x, form='circ' )
+ddx2 = mesh.laplacian_matrix( x, form='circ' )
 
-# A_{i}
-diag = -2*nu/dx**2
-
-# A_{i+1}
-upper = nu/dx**2 - u/(2*dx)
-
-# A_{i-1}
-lower = nu/dx**2 + u/(2*dx)
+# spatial jacobian
+jac = nu*ddx2 - u*ddx
 
 # circulant matrices for explicit and implicit operators
-cimp = np.zeros_like(x)
-cimp[0] = (1/dt)-theta*diag
-cimp[1] =       -theta*lower
-cimp[nx-1] =    -theta*upper
+cimp = -theta*jac
+cimp[0]+=1/dt
 
-cexp = np.zeros_like(x)
-cexp[0] = (1/dt)+(1-theta)*diag
-cexp[1] =        (1-theta)*lower
-cexp[nx-1] =     (1-theta)*upper
+cexp = (1-theta)*jac
+cexp[0]+=1/dt
 
 # solution at each timestep
 q = np.zeros( (nt, x.shape[0]) )
