@@ -1,18 +1,9 @@
 
 import numpy as np
 import scipy.linalg as linalg
+import circulant as circ
 
 import matplotlib.pyplot as plt
-
-# C*x where C is circulant matrix with first column c
-def circ_mul( c, x ):
-    n = c.shape[0]
-    eigvals = fft.fft(c)
-
-    xnew = fft.fft(x)
-    xnew*=eigvals
-    xnew = fft.ifft(xnew)
-    return xnew.real
 
 # newton iterations
 def newton_solve( func,         # function to solve
@@ -87,7 +78,7 @@ jac = -theta*a.copy()
 jac[0]+= (1/dt)
 
 def spatial_residual( u ):
-    return circ_mul(a,u)
+    return circ.matmul(a,u)
 
 def full_residual( u0, u1 ):
     rn0 = spatial_residual(u0)

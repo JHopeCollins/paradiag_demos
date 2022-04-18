@@ -1,0 +1,5 @@
+*.out
+*.dat
+*.txt
+*__init__*
+*__pycache__*

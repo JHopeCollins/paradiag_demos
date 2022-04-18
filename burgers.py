@@ -2,18 +2,9 @@
 import numpy as np
 import scipy.linalg as linalg
 import scipy.fft as fft
+import circulant as circ
 
 import matplotlib.pyplot as plt
-
-# C*x where C is circulant matrix with first column c
-def circ_mul( c, x ):
-    n = c.shape[0]
-    eigvals = fft.fft(c)
-
-    xnew = fft.fft(x)
-    xnew*=eigvals
-    xnew = fft.ifft(xnew)
-    return xnew.real
 
 # newton iterations
 def newton_solve( func,         # function to solve
@@ -54,11 +45,11 @@ def laplacian_matrix( x, form='full' ):
 
 def gradient_operator( x ):
     ddx = gradient_matrix(x,form='circ')
-    return lambda u: circ_mul(ddx,u)
+    return lambda u: circ.matmul(ddx,u)
 
 def laplacian_operator( x ):
     ddx2 = laplacian_matrix(x,form='circ')
-    return lambda u: circ_mul(ddx2,u)
+    return lambda u: circ.matmul(ddx2,u)
 
 # parameters
 

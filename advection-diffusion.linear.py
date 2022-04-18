@@ -1,18 +1,9 @@
 
 import numpy as np
 import scipy.linalg as linalg
+import circulant as circ
 
 import matplotlib.pyplot as plt
-
-# C*x where C is circulant matrix with first column c
-def circ_mul( c, x ):
-    n = c.shape[0]
-    eigvals = fft.fft(c)
-
-    xnew = fft.fft(x)
-    xnew*=eigvals
-    xnew = fft.ifft(xnew)
-    return xnew.real
 
 # parameters
 
@@ -76,7 +67,7 @@ q[0,:] = q0
 
 plt.plot(x,q[0])
 for i in range (1,nt):
-    b = circ_mul(cexp,q[i-1])
+    b = circ.matmul(cexp,q[i-1])
     q[i] = linalg.solve_circulant(cimp,b)
     plt.plot(x,q[i])
 
