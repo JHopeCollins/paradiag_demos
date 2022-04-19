@@ -5,19 +5,14 @@ import scipy.linalg as linalg
 
 # construct (alpha-)circulant matrix
 def circulant( c, alpha=None ):
-    if alpha==None: # standard circulant matrix
-        return linalg.circulant(c)
-
-    else: # alpha-circulant matrix
-        raise NotImplemented( "construction of alpha-circulant matrix not implemented" )
-
-# solve Cx=b for (alpha-)circulant matrix
-def solve( c, b, alpha=None ):
-    if alpha==None: # standard circulant matrix
-        return linalg.solve_circulant(c,b)
-
-    else: # alpha-circulant matrix
-        raise NotImplemented( "solve of alpha-circulant matrix not implemented" )
+    C = linalg.circulant(c)
+    # scale upper triangle of alpha-circulant matrix
+    if alpha!=None:
+        n = c.shape[0]
+        for i in range(0,n-1):
+            for j in range(i+1,n):
+                C[i,j]*=alpha
+    return C
 
 # diagonal matrix Gamma_alpha for alpha-circulant diagonalisation
 def gamalph( n, alpha ):
@@ -54,15 +49,50 @@ def eigenvectors( c, inverse=False, alpha=None ):
         else:
             return np.matmul( np.diag(1./gamma), F.conj().T )
 
-# multiplication of vector by (alpha-)circulant matrix
-def vecmul( c, r, alpha=None ):
-    if alpha!=None:
-        raise NotImplemented( "vector multiplication of alpha-circulant matrix not implemented yet" )
-
+# multiplication Cx=b of vector by (alpha-)circulant matrix
+def vecmul( c, x, alpha=None ):
     norm='ortho' # 1/sqrt(n) scaling on eigenvectors
 
-    rnew = fft.fft(r,norm=norm)
-    rnew*= eigenvalues(c)
-    rnew = fft.ifft(rnew,norm=norm)
-    return rnew.real
+    if alpha==None: # standard circulant matrix
+        # to eigenbasis
+        b = fft.fft(x,norm=norm)
+        # scale by eigenvalues
+        b*= eigenvalues(c)
+        # from eigenbasis
+        b = fft.ifft(b,norm=norm)
+        return b.real
+
+    else: # alpha-circulant matrix
+        n = c.shape[0]
+        gamma = gamalph(n,alpha)
+
+        # to eigenbasis
+        b = gamma*x
+        b = fft.fft(b,norm=norm)
+        # scale by eigenvalues
+        b*= eigenvalues(c,alpha=alpha)
+        # from eigenbasis
+        b = fft.ifft(b,norm=norm)
+        b/= gamma
+        return b.real
+
+# solve Cx=b for (alpha-)circulant matrix
+def solve( c, b, alpha=None ):
+    if alpha==None: # standard circulant matrix
+        return linalg.solve_circulant(c,b)
+
+    else: # alpha-circulant matrix
+        norm='ortho' # 1/sqrt(n) scaling on eigenvectors
+        n = c.shape[0]
+        gamma = gamalph(n,alpha)
+
+        # to eigenbasis
+        x = gamma*b
+        x = fft.fft(x,norm=norm)
+        # scale by eigenvalues
+        x/= eigenvalues(c,alpha=alpha)
+        # from eigenbasis
+        x = fft.ifft(x,norm=norm)
+        x/= gamma
+        return x.real
 
