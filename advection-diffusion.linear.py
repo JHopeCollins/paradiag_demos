@@ -38,7 +38,6 @@ print(  nu, dt, cfl_v, cfl_u  )
 x = mesh.periodic_mesh( xl=-1, xr=1, nx=nx )
 
 # initial conditions
-
 q0 = np.exp( -10*x**2 )
 
 # circulant matrices for gradient and laplacian
@@ -61,7 +60,7 @@ q[0,:] = q0
 
 plt.plot(x,q[0])
 for i in range (1,nt):
-    b = circ.matmul(cexp,q[i-1])
+    b = circ.vecmul(cexp,q[i-1])
     q[i] = linalg.solve_circulant(cimp,b)
     plt.plot(x,q[i])
 

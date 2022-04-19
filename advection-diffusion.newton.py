@@ -71,7 +71,7 @@ jac = -theta*a.copy()
 jac[0]+= (1/dt)
 
 def spatial_residual( u ):
-    return circ.matmul(a,u)
+    return circ.vecmul(a,u)
 
 def full_residual( u0, u1 ):
     rn0 = spatial_residual(u0)

@@ -41,12 +41,12 @@ def gradient_operator( x, order=2 ):
         raise NotImplemented( "only second order gradient implemented" )
 
     ddx = gradient_matrix(x,form='circ',order=order)
-    return lambda u: circ.matmul(ddx,u)
+    return lambda u: circ.vecmul(ddx,u)
 
 def laplacian_operator( x, order=2 ):
     if order!=2:
         raise NotImplemented( "only second order laplacian implemented" )
 
     ddx2 = laplacian_matrix(x,form='circ',order=order)
-    return lambda u: circ.matmul(ddx2,u)
+    return lambda u: circ.vecmul(ddx2,u)
 

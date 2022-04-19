@@ -89,7 +89,7 @@ def spatial_jacobian( u, form='nl' ):
     # nonlinear jacobian
     if form=='nl':
         jac_v = linalg.circulant( nu*ddx2 )
-        jac_u = np.matmul(np.diagflat(u),linalg.circulant(ddx))
+        jac_u = np.vecmul(np.diagflat(u),linalg.circulant(ddx))
         return jac_v - jac_u
 
     else: # linear jacobian
