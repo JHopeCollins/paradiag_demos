@@ -73,8 +73,6 @@ def from_eigenbasis( c, x, alpha=None ):
 
 # multiplication Cx=b of vector by (alpha-)circulant matrix
 def vecmul( c, x, alpha=None ):
-    norm='ortho' # 1/sqrt(n) scaling on eigenvectors
-
     b = to_eigenbasis( c, x, alpha=alpha )
     b*= eigenvalues( c, alpha=alpha)
     b = from_eigenbasis( c, b, alpha=alpha )
@@ -82,21 +80,8 @@ def vecmul( c, x, alpha=None ):
 
 # solve Cx=b for (alpha-)circulant matrix
 def solve( c, b, alpha=None ):
-    if alpha==None: # standard circulant matrix
-        return linalg.solve_circulant(c,b)
-
-    else: # alpha-circulant matrix
-        norm='ortho' # 1/sqrt(n) scaling on eigenvectors
-        n = c.shape[0]
-        gamma = gamalph(n,alpha)
-
-        # to eigenbasis
-        x = gamma*b
-        x = fft.fft(x,norm=norm)
-        # scale by eigenvalues
-        x/= eigenvalues(c,alpha=alpha)
-        # from eigenbasis
-        x = fft.ifft(x,norm=norm)
-        x/= gamma
-        return x.real
+    b = to_eigenbasis( c, b, alpha=alpha )
+    b/= eigenvalues( c, alpha=alpha)
+    b = from_eigenbasis( c, b, alpha=alpha )
+    return b.real
 
