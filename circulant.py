@@ -16,19 +16,17 @@ def circulant( c, alpha=None ):
 
 # diagonal matrix Gamma_alpha for alpha-circulant diagonalisation
 def gamalph( n, alpha ):
+    if alpha==None: return np.ones(n)
     return alpha**(np.arange(n)/n)
 
 # eigenvalues of (alpha-)circulant matrix
 def eigenvalues( c, alpha=None ):
-    n = c.shape[0]
     norm='backward' # 1/n scaling is in eigenvectors
 
-    if alpha==None: # standard circulant matrix
-        return fft.fft( c, norm=norm )
+    if alpha!=None: # alpha-circulant matrix
+        c*= gamalph(c.shape[0],alpha)
 
-    else: # alpha-circulant matrix
-        gamma = gamalph(n,alpha)
-        return fft.fft( gamma*c, norm=norm )
+    return fft.fft( c, norm=norm )
 
 # eigenvectors of (alpha-)circulant matrix
 def eigenvectors( c, inverse=False, alpha=None ):
@@ -49,32 +47,38 @@ def eigenvectors( c, inverse=False, alpha=None ):
         else:
             return np.matmul( np.diag(1./gamma), F.conj().T )
 
+# transform vector x to eigenbasis of (alpha-)circulant matrix c
+def to_eigenbasis( c, x, alpha=None ):
+    norm='ortho' # 1/sqrt(n) scaling on eigenvectors
+
+    b = x.copy()
+
+    if alpha!=None: # alpha-circulant matrix
+        b*= gamalph( c.shape[0], alpha )
+
+    b = fft.fft( b, norm=norm )
+
+    return b
+
+# transform vector x from eigenbasis of (alpha-)circulant matrix c
+def from_eigenbasis( c, x, alpha=None ):
+    norm='ortho' # 1/sqrt(n) scaling on eigenvectors
+
+    b = fft.ifft( x, norm=norm )
+
+    if alpha!=None: # alpha-circulant matrix
+        b/= gamalph( c.shape[0], alpha )
+
+    return b
+
 # multiplication Cx=b of vector by (alpha-)circulant matrix
 def vecmul( c, x, alpha=None ):
     norm='ortho' # 1/sqrt(n) scaling on eigenvectors
 
-    if alpha==None: # standard circulant matrix
-        # to eigenbasis
-        b = fft.fft(x,norm=norm)
-        # scale by eigenvalues
-        b*= eigenvalues(c)
-        # from eigenbasis
-        b = fft.ifft(b,norm=norm)
-        return b.real
-
-    else: # alpha-circulant matrix
-        n = c.shape[0]
-        gamma = gamalph(n,alpha)
-
-        # to eigenbasis
-        b = gamma*x
-        b = fft.fft(b,norm=norm)
-        # scale by eigenvalues
-        b*= eigenvalues(c,alpha=alpha)
-        # from eigenbasis
-        b = fft.ifft(b,norm=norm)
-        b/= gamma
-        return b.real
+    b = to_eigenbasis( c, x, alpha=alpha )
+    b*= eigenvalues( c, alpha=alpha)
+    b = from_eigenbasis( c, b, alpha=alpha )
+    return b.real
 
 # solve Cx=b for (alpha-)circulant matrix
 def solve( c, b, alpha=None ):
