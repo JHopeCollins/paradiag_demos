@@ -29,8 +29,7 @@ def eigenvalues( c, alpha=None ):
     return fft.fft( c, norm=norm )
 
 # eigenvectors of (alpha-)circulant matrix
-def eigenvectors( c, inverse=False, alpha=None ):
-    n = c.shape[0]
+def eigenvectors( n, inverse=False, alpha=None ):
     norm='sqrtn' # 1/sqrt(n) scaling on eigenvectors
     F = linalg.dft(n,scale=norm)
 
@@ -47,41 +46,43 @@ def eigenvectors( c, inverse=False, alpha=None ):
         else:
             return np.matmul( np.diag(1./gamma), F.conj().T )
 
-# transform vector x to eigenbasis of (alpha-)circulant matrix c
-def to_eigenbasis( c, x, alpha=None ):
+# transform vector x to eigenbasis of (alpha-)circulant matrix with rank n
+def to_eigenbasis( n, x, alpha=None ):
     norm='ortho' # 1/sqrt(n) scaling on eigenvectors
 
     b = x.copy()
 
     if alpha!=None: # alpha-circulant matrix
-        b*= gamalph( c.shape[0], alpha )
+        b*= gamalph( n, alpha )
 
     b = fft.fft( b, norm=norm )
 
     return b
 
-# transform vector x from eigenbasis of (alpha-)circulant matrix c
-def from_eigenbasis( c, x, alpha=None ):
+# transform vector x from eigenbasis of (alpha-)circulant matrix with rank n
+def from_eigenbasis( n, x, alpha=None ):
     norm='ortho' # 1/sqrt(n) scaling on eigenvectors
 
     b = fft.ifft( x, norm=norm )
 
     if alpha!=None: # alpha-circulant matrix
-        b/= gamalph( c.shape[0], alpha )
+        b/= gamalph( n, alpha )
 
     return b
 
 # multiplication Cx=b of vector by (alpha-)circulant matrix
 def vecmul( c, x, alpha=None ):
-    b = to_eigenbasis( c, x, alpha=alpha )
+    n = c.shape[0]
+    b = to_eigenbasis( n, x, alpha=alpha )
     b*= eigenvalues( c, alpha=alpha)
-    b = from_eigenbasis( c, b, alpha=alpha )
+    b = from_eigenbasis( n, b, alpha=alpha )
     return b.real
 
 # solve Cx=b for (alpha-)circulant matrix
 def solve( c, b, alpha=None ):
-    b = to_eigenbasis( c, b, alpha=alpha )
+    n = c.shape[0]
+    b = to_eigenbasis( n, b, alpha=alpha )
     b/= eigenvalues( c, alpha=alpha)
-    b = from_eigenbasis( c, b, alpha=alpha )
+    b = from_eigenbasis( n, b, alpha=alpha )
     return b.real
 
