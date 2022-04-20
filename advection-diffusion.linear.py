@@ -61,7 +61,7 @@ q[0,:] = q0
 plt.plot(x,q[0])
 for i in range (1,nt):
     b = circ.vecmul(cexp,q[i-1])
-    q[i] = linalg.solve_circulant(cimp,b)
+    q[i] = circ.solve(cimp,b).real
     plt.plot(x,q[i])
 
 plt.show()

@@ -22,11 +22,13 @@ def gamalph( n, alpha ):
 # eigenvalues of (alpha-)circulant matrix
 def eigenvalues( c, alpha=None ):
     norm='backward' # 1/n scaling is in eigenvectors
+    n = c.shape[0]
+    eigval = c.copy()
 
     if alpha!=None: # alpha-circulant matrix
-        c*= gamalph(c.shape[0],alpha)
+        eigval*= gamalph(n,alpha)
 
-    return fft.fft( c, norm=norm )
+    return fft.fft( eigval, norm=norm )
 
 # eigenvectors of (alpha-)circulant matrix
 def eigenvectors( n, inverse=False, alpha=None ):
@@ -84,5 +86,5 @@ def solve( c, b, alpha=None ):
     b = to_eigenbasis( n, b, alpha=alpha )
     b/= eigenvalues( c, alpha=alpha)
     b = from_eigenbasis( n, b, alpha=alpha )
-    return b.real
+    return b
 

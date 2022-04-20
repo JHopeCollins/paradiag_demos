@@ -83,7 +83,7 @@ for i in range (0,nt-1):
 
     func = lambda u: full_residual(q[i],u)
     fprime = lambda u: jac
-    fprime_solve = lambda A, b: linalg.solve_circulant( A, b )
+    fprime_solve = lambda A, b: circ.solve( A, b ).real
 
     q[i+1],its,res = newton_solve( func, fprime, fprime_solve, q[i] )
 
