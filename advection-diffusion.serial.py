@@ -5,10 +5,21 @@ import matplotlib.pyplot as plt
 import mesh
 import ade_utils as ade
 
+### === --- --- === ###
+#
+# Solve the linear advection diffusion equation
+#   using sequential timestepping
+#
+# ADE solved on a periodic mesh using:
+#   time discretisation: implicit theta-method
+#   space discretisation: second order central differences
+#
+### === --- --- === ###
+
 # parameters
 
 # number of time and space points
-nt = 5
+nt = 8
 nx = 32
 
 # length of domain
@@ -17,14 +28,14 @@ dx = lx/nx
 
 # velocity and reynolds number
 u = 1
-re = 1e2
+re = 5
 nu = 2*u/re
 
 # timestep
 dt = 1.5
 
 # parameter for theta timestepping
-theta=1
+theta=0.5
 
 # sharpness of initial profile
 sharp = 6/lx
@@ -52,8 +63,9 @@ qinit = np.exp( -(sharp*x)**2 )
 q = ade.solve_timeseries( M,K,b, nt,dt,theta, qinit )
 
 # plotting
-plt.plot(x,qinit)
-for i in range(0,nt): plt.plot(x,q[i])
+plt.plot(x,qinit,label='i')
+for i in range(0,nt): plt.plot(x,q[i],label=str(i))
 plt.grid()
+plt.legend(loc='center left')
 plt.show()
 
