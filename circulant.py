@@ -78,7 +78,11 @@ def vecmul( c, x, alpha=None ):
     b = to_eigenbasis( n, x, alpha=alpha )
     b*= eigenvalues( c, alpha=alpha)
     b = from_eigenbasis( n, b, alpha=alpha )
-    return b.real
+
+    is_real = (c.dtype == float)
+
+    if is_real: return b.real
+    else: return b
 
 # solve Cx=b for (alpha-)circulant matrix
 def solve( c, b, alpha=None ):
@@ -86,5 +90,9 @@ def solve( c, b, alpha=None ):
     b = to_eigenbasis( n, b, alpha=alpha )
     b/= eigenvalues( c, alpha=alpha)
     b = from_eigenbasis( n, b, alpha=alpha )
-    return b
+
+    is_real = (c.dtype == float)
+
+    if is_real: return b.real
+    else: return b
 
