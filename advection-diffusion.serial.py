@@ -44,7 +44,7 @@ def linear_solve( M, K, b, theta, dt, q0 ):
 # parameters
 
 # number of time and space points
-nt = 3
+nt = 5
 nx = 32
 
 # length of domain
