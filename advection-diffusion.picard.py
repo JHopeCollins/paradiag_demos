@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 # Solve the linear advection diffusion equation
 #   using parallel timestepping
 #   and solving the stationary iteration (equation 1.4)
-#   each iteration is solved directly
+#   each iteration is solved using the paradiag 3-step
 #
 # ADE solved on a periodic mesh using:
 #   time discretisation: implicit theta-method
@@ -86,12 +86,14 @@ b1[0] =  1/dt
 b1[1] = -1/dt
 B1 = linalg.toeplitz(b1,zeros)
 C1 = circ.circulant(b1,alpha=alpha)
+D1 = circ.eigenvalues(b1,alpha=alpha)
 
 b2 = np.zeros(nt)
 b2[0] =   theta
 b2[1] = 1-theta
 B2 = linalg.toeplitz(b2,zeros)
 C2 = circ.circulant(b2,alpha=alpha)
+D2 = circ.eigenvalues(b2,alpha=alpha)
 
 # all-at-once system
 
@@ -117,6 +119,8 @@ for i in range(0,nt): b[i,:]=forcing[:]
 # initial condition of ODE becomes boundary condition for all-at-once system
 b[0,:]+=circ.vecmul( M/dt - (1-theta)*K, qinit)
 
+b = b.reshape(nt*nx)
+
 ### === --- parallel solve --- === ###
 
 # current guess for solution at each timestep
@@ -128,21 +132,41 @@ for i in range(0,nt):
 # new guess for solution at each timestep
 qnext = qcurr.copy()
 
-# stationary iteration (eq 1.4) with direct Pu=b solve
-
-b = b.reshape(nt*nx)
-qcurr = qcurr.reshape(nt*nx)
-qnext = qcurr.reshape(nt*nx)
+# stationary iteration (eq 1.4) with paradiag Pu=b solve
 
 rhs = np.zeros_like(b)
 
+# intermediate solution arrays
+s1 = np.zeros_like(qcurr,dtype=complex)
+s2 = np.zeros_like(qcurr,dtype=complex)
+
 niters=4
-print( "stationary iteration with direct solve:" )
+print( "stationary iteration with paradiag solve:" )
 for j in range(0,niters):
 
-    # rhs = (P-A)qk + b
+    # set up right hand side of iterative system
+    # rhs = (P-A)q_{k-1} + b
+    rhs = rhs.reshape(nt*nx)
+    qcurr = qcurr.reshape(nt*nx)
+
     rhs = np.matmul(dA,qcurr) + b
-    qnext = linalg.solve(P,rhs)
+
+    rhs = rhs.reshape(nt,nx)
+    qcurr = qcurr.reshape(nt,nx)
+
+    # solve P*q_{k} = rhs with paradiag 3-step
+
+    # step-(a): weighted fft on each time-pencil
+    for i in range(0,nx):
+        s1[:,i] = circ.to_eigenbasis( nt, rhs[:,i], alpha=alpha )
+
+    # step-(b): weighted linear solve in space
+    for i in range (0,nt):
+        s2[i,:] = circ.solve( D1[i]*M + D2[i]*K, s1[i,:] )
+
+    # step-(c): weighted ifft on each time-pencil
+    for i in range(0,nx):
+        qnext[:,i] = circ.from_eigenbasis( nt, s2[:,i], alpha=alpha ).real
 
     # test convergence
     res = np.sum( (qnext-qcurr)*(qnext-qcurr) )/(nx*nt)
@@ -151,10 +175,7 @@ for j in range(0,niters):
     # copy over guess for next iteration
     qcurr[:] = qnext[:]
 
-rhs   = rhs.reshape(nt,nx)
-qcurr = qcurr.reshape(nt,nx)
-qnext = qnext.reshape(nt,nx)
-qparrallel = qnext.copy()
+qparrallel = qnext.reshape(nt,nx)
 
 # plotting
 plt.plot(x,qinit,color='black',label='i')

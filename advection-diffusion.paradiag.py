@@ -236,7 +236,7 @@ plt.gca().set_prop_cycle(None)
 #plt.gca().set_prop_cycle(None)
 #for i in range(0,nt): plt.plot(x,qpard[i],linestyle='-.',  label="d"+str(i)) # iterative with direct solve
 #plt.gca().set_prop_cycle(None)
-#for i in range(0,nt): plt.plot(x,qpari[i],linestyle='--',  label="p"+str(i)) # iterative with iterative solve
+for i in range(0,nt): plt.plot(x,qpari[i],linestyle='--',  label="p"+str(i)) # iterative with iterative solve
 plt.grid()
 plt.legend()
 plt.show()
