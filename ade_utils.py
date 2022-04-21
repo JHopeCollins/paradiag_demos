@@ -15,7 +15,6 @@ def mass_matrix( x, form='circ' ):
 
     return M
 
-
 # stiffness matrix for linear advection-diffusion on periodic mesh
 def stiffness_matrix( x, u, nu, form='circ' ):
     if form!='circ' and form!='full':

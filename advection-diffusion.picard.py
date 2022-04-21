@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 #
 # Solve the linear advection diffusion equation
 #   using parallel timestepping
-#   and solving the stationary iteration (equation 1.4)
+#   and solving the stationary iteration P*du=b-Au (equation 1.4)
 #   each iteration is solved using the paradiag 3-step
 #
 # ADE solved on a periodic mesh using:
@@ -33,7 +33,7 @@ dx = lx/nx
 
 # velocity and reynolds number
 u = 1
-re = 5
+re = 5e1
 nu = 2*u/re
 
 # timestep
@@ -43,7 +43,7 @@ dt = 1.5
 theta=0.5
 
 # alpha circulant parameter
-alpha = 0.01
+alpha = 1e-3
 
 # sharpness of initial profile
 sharp = 6/lx
@@ -140,7 +140,7 @@ rhs = np.zeros_like(b)
 s1 = np.zeros_like(qcurr,dtype=complex)
 s2 = np.zeros_like(qcurr,dtype=complex)
 
-niters=4
+niters=10
 print( "stationary iteration with paradiag solve:" )
 for j in range(0,niters):
 
@@ -156,6 +156,7 @@ for j in range(0,niters):
 
     # solve P*q_{k} = rhs with paradiag 3-step
 
+    """
     # step-(a): weighted fft on each time-pencil
     for i in range(0,nx):
         s1[:,i] = circ.to_eigenbasis( nt, rhs[:,i], alpha=alpha )
@@ -167,6 +168,13 @@ for j in range(0,niters):
     # step-(c): weighted ifft on each time-pencil
     for i in range(0,nx):
         qnext[:,i] = circ.from_eigenbasis( nt, s2[:,i], alpha=alpha ).real
+    """
+
+    # use circulant periodic spatial matrices
+    qnext = circ.paradiag_solve( M,K,rhs, b1,b2, alpha, nt,nx, linear_solver=circ.solve )
+
+    # use full spatial matrices
+    #qnext = circ.paradiag_solve( Mfull,Kfull,rhs, b1,b2, alpha, nt,nx )
 
     # test convergence
     res = np.sum( (qnext-qcurr)*(qnext-qcurr) )/(nx*nt)

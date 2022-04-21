@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 #
 # Solve the linear advection diffusion equation
 #   using parallel timestepping
-#   and solving the all-at-once system directly
+#   and solving the all-at-once system Au=b directly
 #
 # ADE solved on a periodic mesh using:
 #   time discretisation: implicit theta-method
@@ -40,9 +40,6 @@ dt = 1.5
 
 # parameter for theta timestepping
 theta=0.5
-
-# alpha circulant parameter
-alpha = 0.01
 
 # sharpness of initial profile
 sharp = 6/lx
@@ -80,13 +77,16 @@ Mfull = circ.circulant(M)
 Kfull = circ.circulant(K)
 
 # timestepping matrices
+
 zeros = np.zeros(nt)
 
+# time derivative coefficients
 b1 = np.zeros(nt)
 b1[0] =  1/dt
 b1[1] = -1/dt
 B1 = linalg.toeplitz(b1,zeros)
 
+# spatial residual coefficients
 b2 = np.zeros(nt)
 b2[0] =   theta
 b2[1] = 1-theta

@@ -96,3 +96,36 @@ def solve( c, b, alpha=None ):
     if is_real: return b.real
     else: return b
 
+# solve Px=r for a ParaDiag type alpha-circulant matrix P
+def paradiag_solve( M,K,r, b1,b2, alpha, nt,nx, linear_solver=linalg.solve ):
+
+    # eigenvalues of alpha-circulant timestepping matrices
+    D1 = eigenvalues(b1,alpha=alpha)
+    D2 = eigenvalues(b2,alpha=alpha)
+
+    # intermediate solution arrays
+    s1 = np.zeros_like(r,dtype=complex)
+    s2 = np.zeros_like(r,dtype=complex)
+
+    # solution
+    dtype = r.dtype
+    is_real = (dtype == float)
+
+    x = np.zeros_like(r,dtype=dtype)
+
+    # step-(a): weighted fft on each time-pencil
+    for i in range(0,nx):
+        s1[:,i] = to_eigenbasis( nt, r[:,i], alpha=alpha )
+
+    # step-(b): weighted linear solve in space
+    for i in range (0,nt):
+        s2[i,:] = linear_solver( D1[i]*M + D2[i]*K, s1[i,:] )
+
+    # step-(c): weighted ifft on each time-pencil
+    for i in range(0,nx):
+        if is_real:
+            x[:,i] = from_eigenbasis( nt, s2[:,i], alpha=alpha ).real
+        else:
+            x[:,i] = from_eigenbasis( nt, s2[:,i], alpha=alpha )
+
+    return x

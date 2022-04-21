@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 #
 # Solve the linear advection diffusion equation
 #   using parallel timestepping
-#   and solving the stationary iteration (equation 1.4)
+#   and solving the stationary iteration P*du=b-Au (equation 1.4)
 #   each iteration is solved directly
 #
 # ADE solved on a periodic mesh using:
@@ -33,17 +33,17 @@ dx = lx/nx
 
 # velocity and reynolds number
 u = 1
-re = 5
+re = 1e1
 nu = 2*u/re
 
 # timestep
-dt = 1.5
+dt = 1
 
 # parameter for theta timestepping
 theta=0.5
 
 # alpha circulant parameter
-alpha = 0.01
+alpha = 1e-2
 
 # sharpness of initial profile
 sharp = 6/lx
@@ -136,7 +136,7 @@ qnext = qcurr.reshape(nt*nx)
 
 rhs = np.zeros_like(b)
 
-niters=4
+niters=10
 print( "stationary iteration with direct solve:" )
 for j in range(0,niters):
 
