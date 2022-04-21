@@ -23,7 +23,10 @@ def gamalph( n, alpha ):
 def eigenvalues( c, alpha=None ):
     norm='backward' # 1/n scaling is in eigenvectors
     n = c.shape[0]
-    eigval = c.copy()
+
+    eigval = np.zeros(n,dtype=complex)
+
+    eigval[:] = c[:]
 
     if alpha!=None: # alpha-circulant matrix
         eigval*= gamalph(n,alpha)
@@ -52,7 +55,7 @@ def eigenvectors( n, inverse=False, alpha=None ):
 def to_eigenbasis( n, x, alpha=None ):
     norm='ortho' # 1/sqrt(n) scaling on eigenvectors
 
-    b = x.copy()
+    b = np.asarray(x,dtype=complex)
 
     if alpha!=None: # alpha-circulant matrix
         b*= gamalph( n, alpha )
@@ -97,20 +100,28 @@ def solve( c, b, alpha=None ):
     else: return b
 
 # solve Px=r for a ParaDiag type alpha-circulant matrix P
-def paradiag_solve( M,K,r, b1,b2, alpha, nt,nx, linear_solver=linalg.solve ):
+def paradiag_solve( M,K,r, b1,b2, nt,nx, alpha, linear_solver=linalg.solve ):
 
     # eigenvalues of alpha-circulant timestepping matrices
     D1 = eigenvalues(b1,alpha=alpha)
     D2 = eigenvalues(b2,alpha=alpha)
 
-    # intermediate solution arrays
+    # intermediate arrays
     s1 = np.zeros_like(r,dtype=complex)
     s2 = np.zeros_like(r,dtype=complex)
 
-    # solution
-    dtype = r.dtype
-    is_real = (dtype == float)
+    # value type
+    is_real =    (    M.dtype == float) \
+             and (    K.dtype == float) \
+             and (    r.dtype == float) \
+             and (   b1.dtype == float) \
+             and (   b2.dtype == float) \
+             and (alpha.dtype == float) \
 
+    if is_real: dtype=float
+    else:       dtype=complex
+
+    # solution array
     x = np.zeros_like(r,dtype=dtype)
 
     # step-(a): weighted fft on each time-pencil
