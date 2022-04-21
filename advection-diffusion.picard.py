@@ -101,7 +101,7 @@ D2 = circ.eigenvalues(b2,alpha=alpha)
 B1M = np.kron(B1,Mfull)
 B2K = np.kron(B2,Kfull)
 
-# approximate operators
+# alpha-circulant operators
 C1M = np.kron(C1,Mfull)
 C2K = np.kron(C2,Kfull)
 
@@ -140,7 +140,7 @@ rhs = np.zeros_like(b)
 s1 = np.zeros_like(qcurr,dtype=complex)
 s2 = np.zeros_like(qcurr,dtype=complex)
 
-niters=10
+niters=4
 print( "stationary iteration with paradiag solve:" )
 for j in range(0,niters):
 
@@ -171,10 +171,17 @@ for j in range(0,niters):
     """
 
     # use circulant periodic spatial matrices
-    qnext = circ.paradiag_solve( M,K,rhs, b1,b2, alpha, nt,nx, linear_solver=circ.solve )
+    qnext = circ.paradiag_solve( M,K,rhs,
+                                 b1,b2,
+                                 nt,nx,
+                                 alpha,
+                                 linear_solver=circ.solve )
 
     # use full spatial matrices
-    #qnext = circ.paradiag_solve( Mfull,Kfull,rhs, b1,b2, alpha, nt,nx )
+    #qnext = circ.paradiag_solve( Mfull,Kfull,rhs,
+    #                             b1,b2,
+    #                             nt,nx,
+    #                             alpha, )
 
     # test convergence
     res = np.sum( (qnext-qcurr)*(qnext-qcurr) )/(nx*nt)
@@ -182,8 +189,12 @@ for j in range(0,niters):
 
     # copy over guess for next iteration
     qcurr[:] = qnext[:]
+print()
 
-qparrallel = qnext.reshape(nt,nx)
+qparallel = qnext.reshape(nt,nx)
+
+total_error = np.sum( np.sum( (qparallel-qserial)*(qparallel-qserial) ) )/(nx*nt)
+print( "total error: ", total_error )
 
 # plotting
 plt.plot(x,qinit,color='black',label='i')
@@ -194,7 +205,7 @@ for i in range(0,nt): plt.plot(x,qserial[i], linestyle=":", label="s"+str(i))
 
 # parallel solution
 plt.gca().set_prop_cycle(None)
-for i in range(0,nt): plt.plot(x,qparrallel[i],linestyle='-.',  label="p"+str(i))
+for i in range(0,nt): plt.plot(x,qparallel[i],linestyle='-.',  label="p"+str(i))
 
 plt.grid()
 plt.legend(loc='center left')
