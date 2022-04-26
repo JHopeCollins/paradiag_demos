@@ -1,4 +1,7 @@
 
+from math  import pi
+from cmath import exp
+
 import numpy as np
 import scipy.fft as fft
 import scipy.linalg as linalg
@@ -138,4 +141,19 @@ def paradiag_solve( M,K,r, b1,b2, nt,nx, alpha, linear_solver=linalg.solve ):
             x[:,i] = from_eigenbasis( nt, s2[:,i], alpha=alpha )
 
     return x
+
+# solve Ax=r by interpolation of paradiag Px=r at alpha=rho*(dth-roots-of-unity)
+def paradiag_interp( M,K,r, b1,b2, nt,nx, rho, d, linear_solver=linalg.solve ):
+
+    qinterp = np.zeros( (nt,nx),dtype=complex )
+
+    # evaluate Px=r at alpha = rho*(dth-roots-of-unity)
+    for i in range(0,d):
+        qinterp[:]+= paradiag_solve( M,K,r,
+                                     b1,b2,
+                                     nt,nx,
+                                     alpha=rho*exp(2j*pi*i/d),
+                                     linear_solver=linear_solver )
+    # interpolate to alpha=0
+    return qinterp.real/d
 

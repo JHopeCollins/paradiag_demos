@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 #
 # Solve the linear advection diffusion equation
 #   using parallel timestepping
-#   by interpolating P_{alpha}u=b at alpha=0 values found from alpha = roots-of-unity
+#   by interpolating P_{alpha}u=b at alpha=0 from values found from alpha = roots-of-unity
 #       Kressner et al. 2022, Improved parallel-in-time integration via low-rank updates and interpolation
 #
 #   each Pu=b system is solved using the paradiag 3-step
@@ -102,31 +102,12 @@ b[0,:]+=circ.vecmul( M/dt - (1-theta)*K, qinit)
 rho = 1e-2
 d = 3
 
-# solution evaluations for interpolation
-qinterp = np.zeros( (d,nt,nx),dtype=complex )
-
-roots=np.zeros(d,dtype=complex)
-for i in range(0,d):
-    roots[i] = exp(2j*pi*i/d)
-
-# multiple solves of Pu=b with alpha equal to roots-of-unity
-
 print( "evaluation interpolation with paradiag solve:" )
-for j in range(0,d):
-
-    # solve P*q_{k} = b with paradiag 3-step
-
-    qinterp[j,:] = circ.paradiag_solve( M,K,b,
-                                        b1,b2,
-                                        nt,nx,
-                                        alpha=rho*roots[j],
-                                        linear_solver=circ.solve )
-
-# interpolate to alpha=0
-qparallel = np.zeros_like(qserial)
-for j in range(0,d):
-    qparallel[:] += qinterp[j,:].real
-qparallel/=d
+qparallel = circ.paradiag_interp( M,K,b,
+                                  b1,b2,
+                                  nt,nx,
+                                  rho,d,
+                                  linear_solver=circ.solve )
 
 total_error = np.sum( np.sum( (qparallel-qserial)*(qparallel-qserial) ) )/(nx*nt)
 print( "total error: ", total_error )
