@@ -167,7 +167,7 @@ for j in range(0,niters):
 
     # step-(c): weighted ifft on each time-pencil
     for i in range(0,nx):
-        qnext[:,i] = circ.from_eigenbasis( nt, s2[:,i], alpha=alpha ).real
+        qnext[:,i] = circ.from_eigenbasis( nt, s2[:,i], alpha=alpha )
     """
 
     # use circulant periodic spatial matrices
@@ -176,12 +176,6 @@ for j in range(0,niters):
                                  nt,nx,
                                  alpha,
                                  linear_solver=circ.solve )
-
-    # use full spatial matrices
-    #qnext = circ.paradiag_solve( Mfull,Kfull,rhs,
-    #                             b1,b2,
-    #                             nt,nx,
-    #                             alpha, )
 
     # test convergence
     res = np.sum( (qnext-qcurr)*(qnext-qcurr) )/(nx*nt)

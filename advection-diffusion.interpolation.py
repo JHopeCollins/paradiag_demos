@@ -116,14 +116,13 @@ for j in range(0,d):
 
     # solve P*q_{k} = b with paradiag 3-step
 
-    alpha = rho*roots[j]
-
     qinterp[j,:] = circ.paradiag_solve( M,K,b,
                                         b1,b2,
                                         nt,nx,
-                                        alpha,
+                                        alpha=rho*roots[j],
                                         linear_solver=circ.solve )
 
+# interpolate to alpha=0
 qparallel = np.zeros_like(qserial)
 for j in range(0,d):
     qparallel[:] += qinterp[j,:].real

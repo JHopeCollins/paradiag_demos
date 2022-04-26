@@ -11,9 +11,8 @@ def mass_matrix( x, form='circ' ):
     M = np.zeros_like(x)
     M[0]=1
 
-    if form=='full': M=circ.circulant(M)
-
-    return M
+    if form=='full': return circ.circulant(M)
+    else: return M
 
 # stiffness matrix for linear advection-diffusion on periodic mesh
 def stiffness_matrix( x, u, nu, form='circ' ):

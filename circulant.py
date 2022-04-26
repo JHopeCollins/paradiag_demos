@@ -24,9 +24,7 @@ def eigenvalues( c, alpha=None ):
     norm='backward' # 1/n scaling is in eigenvectors
     n = c.shape[0]
 
-    eigval = np.zeros(n,dtype=complex)
-
-    eigval[:] = c[:]
+    eigval = np.asarray(c,dtype=complex)
 
     if alpha!=None: # alpha-circulant matrix
         eigval*= gamalph(n,alpha)
@@ -99,7 +97,7 @@ def solve( c, b, alpha=None ):
     if is_real: return b.real
     else: return b
 
-# solve Px=r for a ParaDiag type alpha-circulant matrix P
+# solve Px=r with the ParaDiag type alpha-circulant matrix P using the ParaDiag 3-step
 def paradiag_solve( M,K,r, b1,b2, nt,nx, alpha, linear_solver=linalg.solve ):
 
     # eigenvalues of alpha-circulant timestepping matrices
@@ -116,7 +114,7 @@ def paradiag_solve( M,K,r, b1,b2, nt,nx, alpha, linear_solver=linalg.solve ):
              and (    r.dtype == float) \
              and (   b1.dtype == float) \
              and (   b2.dtype == float) \
-             and (alpha.dtype == float) \
+             and (type(alpha) == float) \
 
     if is_real: dtype=float
     else:       dtype=complex
@@ -140,3 +138,4 @@ def paradiag_solve( M,K,r, b1,b2, nt,nx, alpha, linear_solver=linalg.solve ):
             x[:,i] = from_eigenbasis( nt, s2[:,i], alpha=alpha )
 
     return x
+
