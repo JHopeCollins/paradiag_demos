@@ -10,6 +10,17 @@ import burgers_utils as bge
 
 import matplotlib.pyplot as plt
 
+### === --- --- === ###
+#
+# Solve the nonlinear burgers equation
+#   using sequential timestepping
+#
+# BGE solved on a periodic mesh using:
+#   time discretisation: implicit theta-method
+#   space discretisation: second order central differences
+#
+### === --- --- === ###
+
 # parameters
 
 # number of time and space points
@@ -47,33 +58,10 @@ print(  nu, dt, cfl_v, cfl_u  )
 # mesh
 x = mesh.periodic_mesh( xl=-lx/2, xr=lx/2, nx=nx )
 
-
 # initial conditions
 qinit = u0 + du*np.exp( -sharp*(x+lx/4)**2 )
 
-# solution at each timestep
-#q = np.zeros( (nt, x.shape[0]) )
-#q[0,:] = u0 + du*np.exp( -sharp*(x+lx/4)**2 )
-
-# function for newton solve: f(u) =  du/dt - R(u)
-full_residual = bge.full_residual(x,nu,dt,theta)
-
-fprime = bge.full_jacobian(x,nu,dt,theta,form='nl',u0=None)
-
-fprime_solve = lambda A,b: newton.jacobian_solve(A,b,jac_type='full')
-
 q = bge.solve_timeseries(x,nu,nt,dt,theta,qinit,jac_form='nl',out_freq=save_freq)
-
-#for i in range (0,nt-1):
-#
-#    # newton solve functions
-#    func   = lambda u: full_residual(q[i],u)
-#
-#    q[i+1],its,res = newton.solve( func, fprime, fprime_solve, q[i] )
-#
-#    if i%save_freq==0:
-#        print( f"{i} | {its} | {res}" )
-#        plt.plot(x,q[i])
 
 for i in range(0,nt,save_freq):
     plt.plot(x,q[i])
