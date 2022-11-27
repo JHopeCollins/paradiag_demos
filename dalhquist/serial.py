@@ -7,35 +7,40 @@ import matplotlib.pyplot as plt
 # Solve Dalhquist's ODE using implicit theta method
 # and serial timestepping
 #
+# y = e^{lamda*t}
+# dydt = lambda*e^{lamda*t}
+# dydt = lambda*y
+#
+# dy/dt = lambda*y
+#
 ### === --- --- === ###
 
 # parameters
 
-nt = 128
+nt = 256
 dt = 0.2
-theta = 1.0
+theta = 0.5
 
 y0 = 1
 
-lamda = -0.1
+lamda = -0.05 + 0.5j
 
-# y = e^{i*lamda*t}
-# dydt = i*lambda*e^{i*lamda*t}
-# dydt = i*lambda*y
+dtype = complex
 
-# dy/dt = lambda*y
-
-y = np.zeros(nt)
+y = np.zeros(nt, dtype=dtype)
 
 y[0] = y0
 
 print(y[0])
-for i in range(1,nt):
+for i in range(1, nt):
     # (y[i] - y[i-1])/dt = theta*lamda*y[i] + (1-theta)*lambda*y[i-1]
-    # y[i]*(1 - dt*theta*lamda) = y[i-1] + (1-theta)*lambda*y[i-1]
+    # y[i]*(1 - dt*theta*lamda) = y[i-1] + dt*(1-theta)*lambda*y[i-1]
 
-    y[i] = (y[i-1] + dt*(1-theta)*lamda*y[i-1])/(1 - dt*theta*lamda)
+    rhs = (y[i-1] + dt*(1-theta)*lamda*y[i-1])
+    jac = (1 - dt*theta*lamda)
+
+    y[i] = rhs/jac
     print(y[i])
 
-plt.plot(y)
+plt.plot(y.real)
 plt.show()
