@@ -67,7 +67,6 @@ a = tuple((acol, arow))
 
 
 class ToeplitzLinearOperator(spla.LinearOperator):
-
     def __init__(self, col, row, dtype=None, inverse=False):
         self.col = col
         self.row = row
@@ -88,7 +87,6 @@ A = ToeplitzLinearOperator(acol, arow, dtype=dtype)
 
 
 class CirculantLinearOperator(spla.LinearOperator):
-
     def __init__(self, col, dtype=None, inverse=False):
         self.col = col
         shape = tuple((len(col), len(col)))
@@ -108,7 +106,42 @@ class CirculantLinearOperator(spla.LinearOperator):
         return self.op(v)
 
 
-P = CirculantLinearOperator(acol, dtype=dtype, inverse=True)
+class AlphaCirculantLinearOperator(spla.LinearOperator):
+    def __init__(self, col, alpha=1, dtype=None, inverse=False):
+        self.alpha = alpha
+        self.col = col
+        n = len(col)
+        shape = tuple((n, n))
+        super().__init__(shape=shape, dtype=dtype)
+        if inverse:
+            self.op = self._solve
+        else:
+            self.op = self._matmul
+
+        # fft weighting
+        self.gamma = alpha**(np.arange(n)/n)
+
+        # eigenvalues
+        self.eigvals = fft(col*self.gamma, norm='backward')
+
+    def _matmul(self, v):
+        return self._from_eigvecs(self._to_eigvecs(v)*self.eigvals)
+
+    def _solve(self, v):
+        return self._from_eigvecs(self._to_eigvecs(v)/self.eigvals)
+
+    def _matvec(self, v):
+        return self.op(v)
+
+    def _to_eigvecs(self, v):
+        return fft(v*self.gamma, norm='ortho')
+
+    def _from_eigvecs(self, v):
+        return ifft(v, norm='ortho')/self.gamma
+
+
+#P = CirculantLinearOperator(acol, dtype=dtype, inverse=True)
+P = AlphaCirculantLinearOperator(acol, alpha=1, dtype=dtype, inverse=True)
 
 ### right hand side
 
