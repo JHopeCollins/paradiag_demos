@@ -149,6 +149,12 @@ P = AlphaCirculantLinearOperator(acol, alpha=1, dtype=dtype, inverse=True)
 rhs = np.zeros(nt, dtype=dtype)
 rhs[0] = -(b1[1] + b2[1])*y0
 
+
+### residual
+
+def residual(x):
+    return rhs - A.matvec(x)
+
 ### solve all-at-once system
 
 niterations = 0
@@ -165,8 +171,10 @@ y, exit_code = spla.gmres(A, rhs, M=P,
                           tol=1e-14, atol=1e-14,
                           callback=gmres_callback,
                           callback_type='pr_norm')
+
 print(f"gmres exit code: {exit_code}")
 print(f"gmres iterations: {niterations}")
+print(f"residual: {linalg.norm(residual(y))}")
 
 if verbose:
     B1 = linalg.toeplitz(b1, r1)
