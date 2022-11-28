@@ -6,7 +6,7 @@ import scipy.sparse.linalg as spla
 
 import matplotlib.pyplot as plt
 
-### === --- --- === ###
+# ## === --- --- === ###
 #
 # Solve Dalhquist's ODE using implicit theta method
 # solving the all-at-once system with ParaDiag
@@ -17,7 +17,7 @@ import matplotlib.pyplot as plt
 #
 # dy/dt = lambda*y
 #
-### === --- --- === ###
+# ## === --- --- === ###
 
 # parameters
 
@@ -33,9 +33,9 @@ lamda = -0.01 + 1.0j
 
 dtype = complex
 
-### timestepping toeplitz matrices
+# ## timestepping toeplitz matrices
 
-## mass toeplitz
+# # mass toeplitz
 
 # first column
 b1 = np.zeros(nt, dtype=dtype)
@@ -46,7 +46,7 @@ b1[1] = -1/dt
 r1 = np.zeros_like(b1)
 r1[0] = b1[0]
 
-## function toeplitz
+# # function toeplitz
 
 # first column
 b2 = np.zeros(nt, dtype=dtype)
@@ -57,9 +57,9 @@ b2[1] = -lamda*(1-theta)
 r2 = np.zeros_like(b2)
 r2[0] = b2[0]
 
-### all-at-once system
+# ## all-at-once system
 
-## Jacobian
+# # Jacobian
 
 acol = b1 + b2
 arow = r1 + r2
@@ -83,7 +83,7 @@ class ToeplitzLinearOperator(spla.LinearOperator):
 
 A = ToeplitzLinearOperator(acol, arow, dtype=dtype)
 
-### paradiag preconditioner
+# ## paradiag preconditioner
 
 
 class CirculantLinearOperator(spla.LinearOperator):
@@ -140,22 +140,23 @@ class AlphaCirculantLinearOperator(spla.LinearOperator):
         return ifft(v, norm='ortho')/self.gamma
 
 
-#P = CirculantLinearOperator(acol, dtype=dtype, inverse=True)
+# P = CirculantLinearOperator(acol, dtype=dtype, inverse=True)
 P = AlphaCirculantLinearOperator(acol, alpha=1, dtype=dtype, inverse=True)
 
-### right hand side
+# ## right hand side
 
 # initial condition
 rhs = np.zeros(nt, dtype=dtype)
 rhs[0] = -(b1[1] + b2[1])*y0
 
 
-### residual
+# ## residual
 
 def residual(x):
     return rhs - A.matvec(x)
 
-### solve all-at-once system
+
+# ## solve all-at-once system
 
 niterations = 0
 
