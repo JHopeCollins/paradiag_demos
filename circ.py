@@ -15,12 +15,14 @@ def circulant(c, alpha=1):
 
 
 class ToeplitzLinearOperator(spla.LinearOperator):
-    def __init__(self, col, row, dtype=None, inverse=False):
+    def __init__(self, col, row, inverse=False):
         self.col = col
         self.row = row
         self.mat = tuple((col, row))
-        shape = tuple((len(col), len(row)))
-        super().__init__(shape=shape, dtype=dtype)
+
+        self.shape = tuple((len(col), len(row)))
+        self.dtype = col.dtype
+
         if inverse:
             self.op = linalg.solve_toeplitz
         else:
@@ -31,10 +33,13 @@ class ToeplitzLinearOperator(spla.LinearOperator):
 
 
 class CirculantLinearOperator(spla.LinearOperator):
-    def __init__(self, col, dtype=None, inverse=False):
+    def __init__(self, col, inverse=False):
         self.col = col
-        shape = tuple((len(col), len(col)))
-        super().__init__(shape=shape, dtype=dtype)
+
+        self.is_complex = np.iscomplexobj(col)
+        self.dtype = col.dtype
+        self.shape = tuple((len(col), len(col)))
+
         if inverse:
             self.op = self._solve
         else:
@@ -43,22 +48,33 @@ class CirculantLinearOperator(spla.LinearOperator):
         self.eigvals = fft(col, norm='backward')
 
     def _matmul(self, v):
-        return ifft(fft(v)*self.eigvals)
+        y = ifft(fft(v)*self.eigvals)
+        if self.is_complex:
+            return y
+        else:
+            return y.real
 
     def _solve(self, v):
-        return ifft(fft(v)/self.eigvals)
+        y = ifft(fft(v)/self.eigvals)
+        if self.is_complex:
+            return y
+        else:
+            return y.real
 
     def _matvec(self, v):
         return self.op(v)
 
 
 class AlphaCirculantLinearOperator(spla.LinearOperator):
-    def __init__(self, col, alpha=1, dtype=None, inverse=False):
+    def __init__(self, col, alpha=1, inverse=False):
         self.alpha = alpha
         self.col = col
         n = len(col)
-        shape = tuple((n, n))
-        super().__init__(shape=shape, dtype=dtype)
+
+        self.is_complex = np.iscomplexobj(col)
+        self.dtype = col.dtype
+        self.shape = tuple((n, n))
+
         if inverse:
             self.op = self._solve
         else:
@@ -71,16 +87,24 @@ class AlphaCirculantLinearOperator(spla.LinearOperator):
         self.eigvals = fft(col*self.gamma, norm='backward')
 
     def _matmul(self, v):
-        return self._from_eigvecs(self._to_eigvecs(v)*self.eigvals)
+        y = self._from_eigvecs(self._to_eigvecs(v)*self.eigvals)
+        if self.is_complex:
+            return y
+        else:
+            return y.real
 
     def _solve(self, v):
-        return self._from_eigvecs(self._to_eigvecs(v)/self.eigvals)
+        y = self._from_eigvecs(self._to_eigvecs(v)/self.eigvals)
+        if self.is_complex:
+            return y
+        else:
+            return y.real
 
     def _matvec(self, v):
         return self.op(v)
 
     def _to_eigvecs(self, v):
-        return fft(v*self.gamma, norm='ortho')
+        return fft(v*self.gamma)
 
     def _from_eigvecs(self, v):
-        return ifft(v, norm='ortho')/self.gamma
+        return ifft(v)/self.gamma
