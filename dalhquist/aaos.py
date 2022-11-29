@@ -70,6 +70,7 @@ class ToeplitzLinearOperator(spla.LinearOperator):
     def __init__(self, col, row, dtype=None, inverse=False):
         self.col = col
         self.row = row
+        self.mat = tuple((col, row))
         shape = tuple((len(col), len(row)))
         super().__init__(shape=shape, dtype=dtype)
         if inverse:
@@ -78,7 +79,7 @@ class ToeplitzLinearOperator(spla.LinearOperator):
             self.op = linalg.matmul_toeplitz
 
     def _matvec(self, v):
-        return self.op((self.col, self.row), v)
+        return self.op(self.mat, v)
 
 
 A = ToeplitzLinearOperator(acol, arow, dtype=dtype)
@@ -96,11 +97,13 @@ class CirculantLinearOperator(spla.LinearOperator):
         else:
             self.op = self._matmul
 
+        self.eigvals = fft(col, norm='backward')
+
     def _matmul(self, v):
-        return ifft(fft(v)*fft(self.col))
+        return ifft(fft(v)*self.eigvals)
 
     def _solve(self, v):
-        return ifft(fft(v)/fft(self.col))
+        return ifft(fft(v)/self.eigvals)
 
     def _matvec(self, v):
         return self.op(v)
