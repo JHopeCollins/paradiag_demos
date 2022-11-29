@@ -5,18 +5,19 @@ import circ
 import pytest
 
 
-def get_col(dtype):
+@pytest.fixture(params=[float, complex])
+def col(request):
+    dtype = request.param
     if dtype is float:
         return np.asarray((2,5,4,0,1), dtype=dtype)
     elif dtype is complex:
         return np.asarray((2+1j,5-3j,4,0,1j), dtype=dtype)
 
 
-@pytest.mark.parametrize("dtype", [float, complex])
-def test_toeplitz(dtype):
+def test_toeplitz(col):
     np.random.seed(12345)
 
-    col = get_col(dtype)
+    #col = get_col(dtype)
     row = np.zeros_like(col)
     row[0] = col[0]
     row[1] = 1
@@ -33,11 +34,8 @@ def test_toeplitz(dtype):
     assert np.allclose(tmat.matvec(x), b)
 
 
-@pytest.mark.parametrize("dtype", [float, complex])
-def test_circulant(dtype):
+def test_circulant(col):
     np.random.seed(12345)
-
-    col = get_col(dtype)
 
     C = circ.circulant(col)
 
@@ -52,11 +50,8 @@ def test_circulant(dtype):
     assert np.allclose(C, linalg.toeplitz(col,row))
 
 
-@pytest.mark.parametrize("dtype", [float, complex])
-def test_circulant_operator(dtype):
+def test_circulant_operator(col):
     np.random.seed(12345)
-
-    col = get_col(dtype)
 
     cmat = circ.CirculantLinearOperator(col)
     cinv = circ.CirculantLinearOperator(col, inverse=True)
@@ -70,11 +65,9 @@ def test_circulant_operator(dtype):
 
 
 @pytest.mark.parametrize("alpha", [0.001, 0.5, 1.])
-@pytest.mark.parametrize("dtype", [float, complex])
-def test_alpha_circulant_operator(alpha, dtype):
+def test_alpha_circulant_operator(alpha, col):
     np.random.seed(12345)
 
-    col = get_col(dtype)
     n = len(col)
 
     cmat = circ.AlphaCirculantLinearOperator(col, alpha=alpha)
@@ -85,7 +78,6 @@ def test_alpha_circulant_operator(alpha, dtype):
     C = circ.circulant(col, alpha=alpha)
 
     x = cinv.matvec(b)
-    if dtype is float: x = x.real
 
     assert np.allclose(x, linalg.solve(C, b))
     assert np.allclose(cmat.matvec(x).real, b)
