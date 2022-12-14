@@ -23,15 +23,19 @@ import matplotlib.pyplot as plt
 
 verbose = False
 
+alpha = 1
+
 nt = 1024
-dt = 0.25
+dt = 0.1
 theta = 0.5
 
 y0 = 1
 
-lamda = -0.01 + 1.0j
+lamda = -0.01 + 1.00j
 
 dtype = complex
+
+time = np.linspace(dt, nt*dt, num=nt, endpoint=True)
 
 # ## timestepping toeplitz matrices
 
@@ -144,13 +148,21 @@ class AlphaCirculantLinearOperator(spla.LinearOperator):
 
 
 # P = CirculantLinearOperator(acol, dtype=dtype, inverse=True)
-P = AlphaCirculantLinearOperator(acol, alpha=1, dtype=dtype, inverse=True)
+P = AlphaCirculantLinearOperator(acol, alpha=alpha, dtype=dtype, inverse=True)
 
 # ## right hand side
 
 # initial condition
 rhs = np.zeros(nt, dtype=dtype)
-rhs[0] = -(b1[1] + b2[1])*y0
+
+#rhs[:]= 1/time[:]
+#rhs[:] = ((time-nt*dt/2)*(time-nt*dt/2))
+rhs+= 2*np.exp(-(time-95*dt)*(time-95*dt))
+rhs+= 0.5*np.exp(-(time-213*dt)*(time-213*dt)/4)
+rhs+= -5*np.exp(-(time-487*dt)*(time-487*dt)/9)
+#print(rhs)
+
+rhs[0]+= -(b1[1] + b2[1])*y0
 
 
 # ## residual
@@ -166,13 +178,13 @@ niterations = 0
 
 def gmres_callback(pr_norm):
     global niterations
-    print(f"niterations: {niterations} | residual: {pr_norm}")
+    print(f"niterations: {str(niterations).rjust(5,' ')} | residual: {pr_norm}")
     niterations += 1
     return
 
 
 y, exit_code = spla.gmres(A, rhs, M=P,
-                          tol=1e-14, atol=1e-14,
+                          #tol=1e-14, atol=1e-14,
                           callback=gmres_callback,
                           callback_type='pr_norm')
 
@@ -196,5 +208,5 @@ if verbose:
     print(y)
 else:
     # plt.plot(y.real, y.imag)
-    plt.plot(y.real)
+    plt.plot(time, y.real)
     plt.show()
