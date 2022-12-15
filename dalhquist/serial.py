@@ -21,28 +21,26 @@ nt = 256
 dt = 0.2
 theta = 0.5
 
-y0 = 1
+q0 = 1
 
 lamda = -0.05 + 0.5j
 
-dtype = complex
-
 # setup timeseries
 
-y = np.zeros(nt+1, dtype=dtype)
+q = np.zeros(nt+1, dtype=complex)
 
-y[0] = y0
+q[0] = q0
 
 # timestepping loop
 
-for i in range(1, nt+1):
-    rhs = (y[i-1] + dt*(1-theta)*lamda*y[i-1])
+for i in range(nt):
+    rhs = (1 + dt*(1-theta)*lamda)*q[i]
     jac = (1 - dt*theta*lamda)
 
-    y[i] = rhs/jac
-    print(y[i])
+    q[i+1] = rhs/jac
+    #print(q[i])
 
 # plot
 
-plt.plot(y.real)
+plt.plot(q.real)
 plt.show()
