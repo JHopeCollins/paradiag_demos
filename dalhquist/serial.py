@@ -29,13 +29,13 @@ dtype = complex
 
 # setup timeseries
 
-y = np.zeros(nt, dtype=dtype)
+y = np.zeros(nt+1, dtype=dtype)
 
 y[0] = y0
 
 # timestepping loop
 
-for i in range(1, nt):
+for i in range(1, nt+1):
     rhs = (y[i-1] + dt*(1-theta)*lamda*y[i-1])
     jac = (1 - dt*theta*lamda)
 
