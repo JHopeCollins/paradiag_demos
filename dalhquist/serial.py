@@ -17,13 +17,15 @@ import matplotlib.pyplot as plt
 
 # parameters
 
-nt = 256
-dt = 0.2
+nt = 1024
+T = 102.4
 theta = 0.5
+
+dt = T/nt
 
 q0 = 1
 
-lamda = -0.05 + 0.5j
+lamda = -0.01 + 1.00j
 
 # setup timeseries
 
@@ -31,14 +33,25 @@ q = np.zeros(nt+1, dtype=complex)
 
 q[0] = q0
 
+def b(t):
+    bb = 0
+    bb += 2*np.exp(-(t-9.5)*(t-9.5))
+    bb += 0.5*np.exp(-(t-21.3)*(t-21.3)/4)
+    bb += -5*np.exp(-(t-48.7)*(t-48.7)/9)
+    return a
+
 # timestepping loop
 
 for i in range(nt):
-    rhs = (1 + dt*(1-theta)*lamda)*q[i]
-    jac = (1 - dt*theta*lamda)
+    tn = i*dt
+    tn1 = (i+1)*dt
 
-    q[i+1] = rhs/jac
-    #print(q[i])
+    forcing = (1-theta)*b(tn) + theta*b(tn1)
+
+    rhs = (1 + dt*(1-theta)*lamda)*q[i] + dt*forcing
+    lhs = (1 - dt*theta*lamda)
+
+    q[i+1] = rhs/lhs
 
 # plot
 
