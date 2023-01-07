@@ -23,11 +23,13 @@ import matplotlib.pyplot as plt
 
 verbose = False
 
-alpha = 1
+alpha = 1e-0
 
+T = 102.4
 nt = 1024
-dt = 0.1
 theta = 0.5
+
+dt = T/nt
 
 y0 = 1
 
@@ -71,10 +73,12 @@ arow = r1 + r2
 
 class ToeplitzLinearOperator(spla.LinearOperator):
     def __init__(self, col, row):
+        self.dtype = col.dtype
+        self.shape = tuple((len(col), len(row)))
+
         self.col = col
         self.row = row
         self.mat = tuple((col, row))
-        self.shape = tuple((len(col), len(row)))
 
     def _matvec(self, v):
         return linalg.matmul_toeplitz(self.mat, v)
@@ -87,6 +91,7 @@ A = ToeplitzLinearOperator(acol, arow)
 
 class CirculantLinearOperator(spla.LinearOperator):
     def __init__(self, col):
+        self.dtype = col.dtype
         self.col = col
         n = len(col)
         self.shape = tuple((n, n))
@@ -98,6 +103,7 @@ class CirculantLinearOperator(spla.LinearOperator):
 
 class AlphaCirculantLinearOperator(spla.LinearOperator):
     def __init__(self, col, alpha=1):
+        self.dtype = col.dtype
         self.alpha = alpha
         self.col = col
         n = len(col)
@@ -119,22 +125,26 @@ class AlphaCirculantLinearOperator(spla.LinearOperator):
         return self._from_eigvecs(self._to_eigvecs(v)/self.eigvals)
 
 
-P = CirculantLinearOperator(acol)
-# P = AlphaCirculantLinearOperator(acol, alpha=alpha)
+# P = CirculantLinearOperator(acol)
+P = AlphaCirculantLinearOperator(acol, alpha=alpha)
+
+# forcing
+
+def b(t):
+    bb = 0
+    bb += 2*np.exp(-(t-9.5)*(t-9.5))
+    bb += 0.5*np.exp(-(t-21.3)*(t-21.3)/4)
+    bb += -5*np.exp(-(t-48.7)*(t-48.7)/9)
+    return bb
 
 # ## right hand side
 
-# initial condition
 rhs = np.zeros(nt, dtype=dtype)
 
-#rhs[:]= 1/time[:]
-#rhs[:] = ((time-nt*dt/2)*(time-nt*dt/2))
-rhs+= 2*np.exp(-(time-95*dt)*(time-95*dt))
-rhs+= 0.5*np.exp(-(time-213*dt)*(time-213*dt)/4)
-rhs+= -5*np.exp(-(time-487*dt)*(time-487*dt)/9)
-#print(rhs)
+rhs[0] += -(b1[1] + b2[1])*y0 + (1-theta)*b(0)
 
-rhs[0]+= -(b1[1] + b2[1])*y0
+rhs[1:] += (1-theta)*b(time[:-1])
+rhs[:] += theta*b(time[:])
 
 
 # ## residual
@@ -156,6 +166,7 @@ def gmres_callback(pr_norm):
 
 
 y, exit_code = spla.gmres(A, rhs, M=P,
+                          #restart=nt,
                           #tol=1e-14, atol=1e-14,
                           callback=gmres_callback,
                           callback_type='pr_norm')
@@ -164,21 +175,5 @@ print(f"gmres exit code: {exit_code}")
 print(f"gmres iterations: {niterations}")
 print(f"residual: {linalg.norm(residual(y))}")
 
-if verbose:
-    B1 = linalg.toeplitz(b1, r1)
-    B2 = linalg.toeplitz(b2, r2)
-    A = B1 + B2
-    print("B1")
-    print(B1)
-    print("B2")
-    print(B2)
-    print("A")
-    print(A)
-    print("rhs")
-    print(rhs)
-    print("y")
-    print(y)
-else:
-    # plt.plot(y.real, y.imag)
-    plt.plot(time, y.real)
-    plt.show()
+plt.plot(time, y.real)
+plt.show()

@@ -38,7 +38,7 @@ def b(t):
     bb += 2*np.exp(-(t-9.5)*(t-9.5))
     bb += 0.5*np.exp(-(t-21.3)*(t-21.3)/4)
     bb += -5*np.exp(-(t-48.7)*(t-48.7)/9)
-    return a
+    return bb
 
 # timestepping loop
 
@@ -46,14 +46,15 @@ for i in range(nt):
     tn = i*dt
     tn1 = (i+1)*dt
 
-    forcing = (1-theta)*b(tn) + theta*b(tn1)
+    bb = (1-theta)*b(tn) + theta*b(tn1)
 
-    rhs = (1 + dt*(1-theta)*lamda)*q[i] + dt*forcing
+    rhs = (1 + dt*(1-theta)*lamda)*q[i] + dt*bb
     lhs = (1 - dt*theta*lamda)
 
     q[i+1] = rhs/lhs
 
 # plot
+time = np.linspace(0, nt*dt, num=nt+1, endpoint=True)
 
-plt.plot(q.real)
+plt.plot(time, q.real)
 plt.show()
