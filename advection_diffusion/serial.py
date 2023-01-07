@@ -21,26 +21,26 @@ from math import pi
 
 # number of time and space points
 nt = 256
-nx = 128
+nx = 512
 
 # size of domain
-lx = float(nx)
+lx = 256.
 dx = lx/nx
 
 # velocity and reynolds number
 u = 1
-re = 50
+re = 200
 cfl = 0.4
 
+# width of initial profile
+width = lx/4
+
 # timestep
-nu = 2*u/re
+nu = width*u/re
 dt = cfl*dx/u
 
 # parameter for theta timestepping
 theta=0.5
-
-# width of initial profile
-width = lx/4
 
 cfl_v = nu*dt/dx**2
 cfl_u = u*dt/dx
@@ -77,18 +77,18 @@ lhs_col = M + dt*theta*K
 
 # linear operators
 class CirculantLinearOperator(spla.LinearOperator):
-    def __init__(self, col, inverse=False):
+    def __init__(self, col, inverse=True):
         self.col = col
         self.shape = tuple((len(col), len(col)))
 
         if inverse:
             self.op = self._solve
         else:
-            self.op = self._matmul
+            self.op = self._mul
 
         self.eigvals = fft(col, norm='backward')
 
-    def _matmul(self, v):
+    def _mul(self, v):
         return ifft(fft(v)*self.eigvals)
 
     def _solve(self, v):

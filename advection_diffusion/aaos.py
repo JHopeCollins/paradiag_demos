@@ -186,7 +186,6 @@ b2[1] = 1-theta
 
 def block_op(l1, l2):
     col = l1*M + l2*K
-    assert np.iscomplexobj(col)
     return CirculantLinearOperator(col, inverse=True)
 
 P = BlockCirculantLinearOperator(b1, b2, block_op, nx, alpha)
