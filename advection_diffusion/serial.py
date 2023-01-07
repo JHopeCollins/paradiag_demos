@@ -103,7 +103,7 @@ lhs = CirculantLinearOperator(lhs_col, inverse=True)
 
 # initial conditions
 qinit = np.zeros_like(x)
-qinit[:] = 1 + np.cos(np.minimum(2*pi*np.abs(x)/width, pi))
+qinit[:] = 1 + np.cos(np.minimum(2*pi*np.abs(x+lx/4)/width, pi))
 
 q = np.zeros((nt+1, nx))
 q[0] = qinit
