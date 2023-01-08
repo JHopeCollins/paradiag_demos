@@ -20,7 +20,7 @@ from math import pi
 
 # parameters
 
-alpha = 0.001
+alpha = 0.1
 
 # number of time and space points
 nt = 256
@@ -55,8 +55,8 @@ print(  nu, dt, cfl_v, cfl_u  )
 x = np.linspace( start=-lx/2, stop=lx/2, num=nx, endpoint=False )
 
 # identity mass matrix
-M = np.zeros_like(x)
-M[0] = 1
+I = np.zeros_like(x)
+I[0] = 1
 
 # gradient matrix
 Ka = np.zeros_like(x)
@@ -74,8 +74,8 @@ Kd = Kd
 
 K = u*Ka - nu*Kd
 
-un0_col = -M + dt*(1 - theta)*K
-un1_col = M + dt*theta*K
+un0_col = -I/dt + (1 - theta)*K
+un1_col = I/dt + theta*K
 
 
 # linear operators
@@ -87,11 +87,11 @@ class CirculantLinearOperator(spla.LinearOperator):
         self.is_complex = np.iscomplexobj(col)
 
         if inverse: self.op = self._solve
-        else: self.op = self._matmul
+        else: self.op = self._mul
 
         self.eigvals = fft(col, norm='backward')
 
-    def _matmul(self, v):
+    def _mul(self, v):
         return ifft(fft(v)*self.eigvals)
 
     def _solve(self, v):
@@ -105,50 +105,46 @@ class CirculantLinearOperator(spla.LinearOperator):
 A0 = CirculantLinearOperator(un0_col, inverse=False)
 A1 = CirculantLinearOperator(un1_col, inverse=False)
 
-# initial conditions
-qinit = np.zeros_like(x)
-qinit[:] = 1 + np.cos(np.minimum(2*pi*np.abs(x+lx/4)/width, pi))
 
-q = np.zeros((nt, nx))
+class AllAtOnceLinearOperator(spla.LinearOperator):
+    def __init__(self, nt, A0, A1):
+        self.A0 = A0
+        self.A1 = A1
 
+        self.nt = nt
+        self.nx = A0.shape[0]
 
-class BlockToeplitzLinearOperator(spla.LinearOperator):
-    def __init__(self, nblocks, block0, block1):
-        self.block0 = block0
-        self.block1 = block1
-
-        self.nblocks = nblocks
-        self.block_dim = block0.shape[0]
-
-        self.dim = self.nblocks*self.block_dim
+        self.dim = self.nt*self.nx
         self.shape = tuple((self.dim, self.dim))
-        self.dtype = block0.dtype
+        self.dtype = A0.dtype
 
     def _matvec(self, v):
-        v = v.reshape((self.nblocks, self.block_dim))
+        v = v.reshape((self.nt, self.nx))
         w = np.zeros_like(v)
 
-        w[0]+= self.block1.matvec(v[0])
-        for b in range(1, self.nblocks):
-            w[b]+= self.block0.matvec(v[b-1])
-            w[b]+= self.block1.matvec(v[b])
+        w[0]+= self.A1.matvec(v[0])
+        for b in range(1, self.nt):
+            w[b]+= self.A0.matvec(v[b-1])
+            w[b]+= self.A1.matvec(v[b])
 
         return w.reshape(self.dim)
 
+A = AllAtOnceLinearOperator(nt, A0, A1)
+
 
 class BlockCirculantLinearOperator(spla.LinearOperator):
-    def __init__(self, col0, col1, block_op, block_dim, alpha=1):
-        self.nblocks = len(col0)
-        self.block_dim = block_dim
-        self.dim = self.nblocks*self.block_dim
+    def __init__(self, b1, b2, block_op, nx, alpha=1):
+        self.nt = len(b1)
+        self.nx = nx
+        self.dim = self.nt*self.nx
         self.shape = tuple((self.dim, self.dim))
-        self.dtype = col0.dtype
+        self.dtype = b1.dtype
 
-        self.gamma = alpha**(np.arange(self.nblocks)/self.nblocks)
+        self.gamma = alpha**(np.arange(self.nt)/self.nt)
 
-        eigvals0 = fft(col0*self.gamma, norm='backward')
-        eigvals1 = fft(col1*self.gamma, norm='backward')
-        eigvals = zip(eigvals0, eigvals1)
+        eigvals1 = fft(b1*self.gamma, norm='backward')
+        eigvals2 = fft(b2*self.gamma, norm='backward')
+        eigvals = zip(eigvals1, eigvals2)
 
         self.blocks = tuple((block_op(l1, l2)
                              for l1, l2 in eigvals))
@@ -162,19 +158,17 @@ class BlockCirculantLinearOperator(spla.LinearOperator):
         return np.matmul(np.diag(1/self.gamma), y)
 
     def _block_solve(self, v):
-        for i in range(self.nblocks):
+        for i in range(self.nt):
             v[i] = self.blocks[i].matvec(v[i])
         return v
 
     def _matvec(self, v):
-        y = v.reshape((self.nblocks, self.block_dim))
+        y = v.reshape((self.nt, self.nx))
         y = self._to_eigvecs(y)
         y = self._block_solve(y)
         y = self._from_eigvecs(y)
         return y.reshape(self.dim).real
 
-
-A = BlockToeplitzLinearOperator(nt, A0, A1)
 
 b1 = np.zeros(nt)
 b1[0] = 1/dt
@@ -185,11 +179,18 @@ b2[0] = theta
 b2[1] = 1-theta
 
 def block_op(l1, l2):
-    col = l1*M + l2*K
+    col = l1*I + l2*K
     return CirculantLinearOperator(col, inverse=True)
 
 P = BlockCirculantLinearOperator(b1, b2, block_op, nx, alpha)
 
+# initial conditions
+qinit = np.zeros_like(x)
+qinit[:] = 1 + np.cos(np.minimum(2*pi*np.abs(x+lx/4)/width, pi))
+
+q = np.zeros(nt*nx)
+
+q = q.reshape((nt,nx))
 
 rhs = np.zeros_like(q)
 rhs[0]-= A0.matvec(qinit)
